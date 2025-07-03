@@ -1,48 +1,55 @@
-#include "kernel/types.h"
-#include "kernel/fcntl.h"
 #include "user/user.h"
 
 int main(int argc, char *argv[]) {
-
-    if (argc > 1) {
-        fprintf(2, "No arguments!\n");
-        exit(1);
-    }
-
-    int p1[2];
-    int p2[2];
-    char buf[1];
-
-    pipe(p1); // parent->child
-    pipe(p2); // child->parent
+    int p1[2]; // parent to child
+    int p2[2]; // child to parent
+    pipe(p1);
+    pipe(p2);
 
     if (fork() == 0) {
-        close(p1[1]); // close write parent->child
-        close(p2[0]); // close read child->parent
+        char buf[1];
+        close(p1[1]);
+        close(p2[0]);
 
-        read(p1[0], buf, 1);
+        if (read(p1[0], buf, 1) != 1) {
+            fprintf(2, "child read error.\n");
+            exit(1);
+        }
+
         printf("%d: received ping\n", getpid());
 
-        write(p2[1], "p", 1);
+        if (write(p2[1], buf, 1) != 1) {
+            fprintf(2, "child write error.\n");
+            exit(1);
+        }
 
         close(p1[0]);
         close(p2[1]);
 
         exit(0);
     } else {
-        close(p1[0]); // close read parent->child
-        close(p2[1]); // close write child->parent
+        char buf[1];
+        close(p1[0]);
+        close(p2[1]);
 
-        write(p1[1], "p", 1);
-        read(p2[0], buf, 1);
-
-        printf("%d: received pong\n", getpid());
+        if (write(p1[1], "a", 1) != 1) {
+            fprintf(2, "parent write error.\n");
+            exit(1);
+        }
 
         wait(0);
 
+        if (read(p2[0], buf, 1) != 1)
+        {
+            fprintf(2, "parent read error.\n");
+            exit(1);
+        }
+
+        printf("%d: received pong\n", getpid());
+        
         close(p1[1]);
         close(p2[0]);
-    }
 
-    exit(0);
+        exit(0);
+    }
 }

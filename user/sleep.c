@@ -1,10 +1,9 @@
-#include "kernel/types.h"
 #include "user/user.h"
 
 int main(int argc, char *argv[]) {
 
-    if (argc <= 1 || argc >= 3) {
-        fprintf(2, "Pass one argument for sleep!\n");
+    if (argc != 2) {
+        fprintf(2, "Pass one parameter, usage: sleep 10\n");
         exit(1);
     }
 
